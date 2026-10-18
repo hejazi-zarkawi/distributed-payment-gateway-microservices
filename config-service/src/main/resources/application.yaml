@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: config-service
+
+  cloud:
+    config:
+      server:
+        git:
+          uri: https://github.com/hejazi-zarkawi/distributed-payment-gateway-config
+          username: hejazi-zarkawi
+          password: ${GITHUB_TOKEN}
+          default-label: main
+
+server.port: 8888
