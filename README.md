@@ -1,4 +1,4 @@
-# Distributed Payment Gateway
+# Distributed Payment Gateway — Microservices
 
 A distributed payment gateway built with **Java 21, Spring Boot, Spring Cloud, PostgreSQL, Redis, and Kafka**, designed around a microservices architecture.
 
