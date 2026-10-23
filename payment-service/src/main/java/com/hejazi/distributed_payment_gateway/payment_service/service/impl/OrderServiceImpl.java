@@ -19,6 +19,8 @@ import com.hejazi.distributed_payment_gateway.payment_service.outbox.OutboxEvent
 import com.hejazi.distributed_payment_gateway.payment_service.repository.OrderRepository;
 import com.hejazi.distributed_payment_gateway.payment_service.repository.PaymentRepository;
 import com.hejazi.distributed_payment_gateway.payment_service.service.OrderService;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -47,6 +49,8 @@ public class OrderServiceImpl implements OrderService {
 
         @Override
         @Transactional
+        @CircuitBreaker(name = "merchant-service")
+        @Retry(name = "merchant-service")
         public OrderResponse create(UUID merchantId, CreateOrderRequest request) {
             if (request.receipt() != null && orderRepository.existsByMerchantIdAndReceipt(merchantId, request.receipt())) {
                 throw new DuplicateResourceException("ORDER_RECEIPT_DUPLICATE", "Order with receipt already exists: " + request.receipt());

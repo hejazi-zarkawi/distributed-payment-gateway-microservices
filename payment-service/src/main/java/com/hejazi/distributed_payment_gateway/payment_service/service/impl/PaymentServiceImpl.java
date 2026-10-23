@@ -4,7 +4,6 @@ import com.hejazi.distributed_payment_gateway.common_lib.enums.EventAggregateTyp
 import com.hejazi.distributed_payment_gateway.common_lib.enums.OrderStatus;
 import com.hejazi.distributed_payment_gateway.common_lib.enums.PaymentEvent;
 import com.hejazi.distributed_payment_gateway.common_lib.enums.PaymentStatus;
-import com.hejazi.distributed_payment_gateway.common_lib.exception.BusinessRuleViolationException;
 import com.hejazi.distributed_payment_gateway.common_lib.exception.ResourceNotFoundException;
 import com.hejazi.distributed_payment_gateway.payment_service.dto.request.PaymentInitRequest;
 import com.hejazi.distributed_payment_gateway.payment_service.dto.response.PaymentResponse;
@@ -17,6 +16,7 @@ import com.hejazi.distributed_payment_gateway.payment_service.mapper.PaymentMapp
 import com.hejazi.distributed_payment_gateway.payment_service.outbox.OutboxEventPublisher;
 import com.hejazi.distributed_payment_gateway.payment_service.repository.OrderRepository;
 import com.hejazi.distributed_payment_gateway.payment_service.repository.PaymentRepository;
+import com.hejazi.distributed_payment_gateway.payment_service.saga.PaymentAuthorizationRecorder;
 import com.hejazi.distributed_payment_gateway.payment_service.service.PaymentService;
 import com.hejazi.distributed_payment_gateway.payment_service.statemachine.PaymentTransitionService;
 import lombok.RequiredArgsConstructor;
@@ -38,72 +38,26 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentMapper paymentMapper;
     private final PaymentTransitionService paymentTransitionService;
     private final OutboxEventPublisher eventPublisher;
+    private final PaymentAuthorizationRecorder paymentAuthorizationRecorder;
 
     @Override
-    @Transactional()
     public PaymentResponse initiate(UUID merchantId, PaymentInitRequest request) {
-//        OrderRecord order = orderRepository.findByIdAndMerchantId(request.orderId(), merchantId)
-//                .orElseThrow(() -> new ResourceNotFoundException("Order", request.orderId()));
-
-        OrderRecord order = orderRepository.findByIdAndMerchantIdForUpdate(request.orderId(), merchantId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order", request.orderId()));
-
-        if(order.getOrderStatus() != OrderStatus.CREATED && order.getOrderStatus() != OrderStatus.ATTEMPTED) {
-            throw new BusinessRuleViolationException("ORDER_NOT_PAYABLE",
-                    "Order cannot accept payment in status: "+order.getOrderStatus());
-        }
-
-        order.setOrderStatus(OrderStatus.ATTEMPTED);
-        order.setAttempts(order.getAttempts()+1);
-
-        Payment payment = Payment.builder()
-                .order(order)
-                .merchantId(merchantId)
-                .amount(order.getAmount())
-                .status(PaymentStatus.CREATED)
-                .method(request.method())
-                .idempotencyKey(UUID.randomUUID().toString()) //TODO: idempotency
-                .methodDetails(request.methodDetails())
-                .build();
-        payment = paymentRepository.save(payment);
+        Payment payment = paymentAuthorizationRecorder.recordPayment(merchantId, request);
 
         PaymentRequest paymentRequest = new PaymentRequest(payment.getId(),
                 request.orderId(), merchantId,
-                order.getAmount(), request.method(),
+                payment.getAmount(), request.method(),
                 request.methodDetails());
 
-        paymentTransitionService.apply(payment, PaymentEvent.AUTHORIZE_ATTEMPT);
-        PaymentResult result = paymentGatewayRouter.initiate(paymentRequest);
-
-        switch (result) {
-            case PaymentResult.Pending pending -> payment.setProcessorReference(pending.registrationRef());
-            case PaymentResult.Failure failure -> {
-//                payment.setStatus(PaymentStatus.FAILED);
-                paymentTransitionService.apply(payment, PaymentEvent.AUTHORIZE_FAIL);
-                payment.setErrorCode(failure.errorCode());
-                payment.setErrorDescription(failure.errorDescription());
-            }
-            case PaymentResult.Success success -> {
-                log.warn("Invalid state");
-                return null;
-            }
+        PaymentResult result;
+        try {
+            result = paymentGatewayRouter.initiate(paymentRequest);
+        } catch (Exception e) {
+            return paymentAuthorizationRecorder.compensateAuthorizationFailure(payment.getId(),
+                    "PAYMENT_GATEWAY_ROUTER_UNREACHABLE", e.getMessage());
         }
 
-        payment = paymentRepository.save(payment);
-        orderRepository.save(order);
-
-        eventPublisher.publish(EventAggregateType.PAYMENT, payment.getId(), "PAYMENT_CREATED",
-                Map.of("orderId", order.getId().toString(),
-                        "paymentId", payment.getId().toString(),
-                        "merchantId", merchantId.toString(),
-                        "paymentStatus", payment.getStatus().name(),
-                        "amountUnits", order.getAmount().getAmountUnits(),
-                        "amountCurrency", order.getAmount().getCurrency(),
-                        "paymentMethod", payment.getMethod()
-                )
-        );
-
-        return paymentMapper.toResponse(payment);
+        return paymentAuthorizationRecorder.applyGatewayResult(payment.getId(), result);
     }
 
     @Override

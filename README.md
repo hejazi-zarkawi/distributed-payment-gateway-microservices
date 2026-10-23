@@ -6,7 +6,7 @@ This repository represents the evolution of the original payment gateway from a 
 
 > 🚧 **Status: Active Development**
 >
-> The core microservices architecture is implemented and running. Advanced distributed-system capabilities such as Saga orchestration, distributed scheduler locking, circuit breakers, bulkheads, observability, Kubernetes deployment, and load testing are planned as the next stages.
+> The core microservices architecture is implemented and running. Operational hardening and platform maturity work such as observability, Kubernetes deployment, and load testing remain as the next stages.
 
 ---
 
@@ -727,6 +727,10 @@ The migration is focused not only on splitting the application into multiple ser
 - [x] Payment authorization
 - [x] Payment capture
 - [x] Payment state machine
+- [x] Saga-style distributed transaction coordination
+- [x] Scheduler locking (ShedLock)
+- [x] Retry handling
+- [x] Circuit breakers
 - [x] Card tokenization / vault flow
 - [x] Refund flow and refund processing
 - [x] Settlement processing
@@ -742,12 +746,6 @@ The migration is focused not only on splitting the application into multiple ser
 
 The following capabilities are planned for future iterations:
 
-- [ ] Saga orchestration
-- [ ] Distributed transaction workflow
-- [ ] Redis-based distributed scheduler locking
-- [ ] Circuit breakers
-- [ ] Bulkheads
-- [ ] Advanced resilience mechanisms
 - [ ] Distributed tracing
 - [ ] OpenTelemetry
 - [ ] Prometheus
@@ -808,10 +806,6 @@ Microservices Architecture
        ▼
 Next Stage
        │
-       ├── Saga
-       ├── Distributed Locking
-       ├── Circuit Breaker
-       ├── Bulkhead
        ├── Observability
        ├── Kubernetes
        └── Load Testing
