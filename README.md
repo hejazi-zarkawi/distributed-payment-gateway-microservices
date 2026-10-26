@@ -4,9 +4,9 @@ A distributed payment gateway built with **Java 21, Spring Boot, Spring Cloud, P
 
 This repository represents the evolution of the original payment gateway from a modular monolithic architecture into independently deployable services with centralized authentication, service discovery, centralized configuration, distributed rate limiting, idempotency, asynchronous event processing, and merchant-context propagation.
 
-> 🚧 **Status: Active Development**
+> 🚧 **Status: Active Development / Local K8s-ready**
 >
-> The core microservices architecture is implemented and running. Operational hardening and platform maturity work such as observability, Kubernetes deployment, and load testing remain as the next stages.
+> The core microservices architecture is implemented and running, with Prometheus, Grafana, and Zipkin observability enabled, payment idempotency in place, and Kubernetes manifests for local Kind deployment included in the repository.
 
 ---
 
@@ -107,22 +107,17 @@ The gateway propagates merchant-related metadata through request headers. Downst
 distributed-payment-gateway/
 │
 ├── api-gateway-service/
-│
 ├── common-lib/
-│
 ├── config-service/
-│
 ├── discovery-service/
-│
 ├── merchant-service/
-│
 ├── payment-service/
-│
 ├── vault-service/
-│
 ├── operations-service/
-│
-└── README.md
+├── k8s/
+├── observability/
+├── README.md
+└── .idea/
 ```
 
 The repository follows a **monorepo structure**, while each Spring Boot application remains an independently deployable service.
@@ -188,6 +183,15 @@ The repository follows a **monorepo structure**, while each Spring Boot applicat
 ### Observability
 
 - Spring Boot Actuator
+- Micrometer
+- Prometheus
+- Grafana
+- Zipkin tracing
+
+### Kubernetes / platform
+
+- Kubernetes manifests
+- Kind local cluster configuration
 
 ### Build
 
@@ -372,6 +376,8 @@ Redis
 ```
 
 Completed responses are stored in Redis and can be replayed for duplicate requests.
+
+This is not limited to generic request filtering: the payment service explicitly accepts the `X-Idempotency-Key` header on payment initiation and replays the previous payment result when the same key is used again. The `PaymentService.initiate(..., String idempotencyKey)` path checks for an existing payment attempt before creating a new one.
 
 This provides protection against duplicate processing when clients retry requests.
 
@@ -574,22 +580,21 @@ Used for asynchronous event processing and service communication.
 
 - Redis-backed rate limiting
 - Redis-backed idempotency
+- Payment idempotency using `X-Idempotency-Key`
 - Webhook retry handling
 - Dead-letter processing
 - Gateway-level request validation
 - Centralized authentication
 - Shared infrastructure components
+- Resilience4j circuit breakers
+- ShedLock scheduler locking
+- Prometheus metrics exposure
+- Grafana dashboards and datasource provisioning
+- Zipkin tracing
 
 ## Current Observability
 
-Spring Boot Actuator is currently included.
-
-The following have **not yet been implemented**:
-
-- Prometheus
-- Grafana
-- OpenTelemetry
-- Distributed tracing
+The repository includes Spring Boot Actuator, Micrometer Prometheus registration, Grafana datasource and dashboard provisioning, and Zipkin tracing configuration. The observability stack is wired for local monitoring and tracing across the services.
 
 ---
 
@@ -634,6 +639,21 @@ Eureka Server:  http://localhost:8761
 9. operations-service
 10. api-gateway-service
 ```
+
+## Kubernetes / Kind deployment
+
+The repository contains a local Kubernetes deployment setup under `k8s/` and a Kind cluster config at `k8s/kind-config.yaml`.
+
+```text
+k8s/
+├── kind-config.yaml
+├── kustomization.yaml
+├── infra/
+├── stateful/
+└── services/
+```
+
+This includes manifests for PostgreSQL, Redis, Kafka, Zipkin, Prometheus, and Grafana, alongside service deployments for the application stack.
 
 ## Run a Service
 
@@ -727,6 +747,7 @@ The migration is focused not only on splitting the application into multiple ser
 - [x] Payment authorization
 - [x] Payment capture
 - [x] Payment state machine
+- [x] Payment idempotency
 - [x] Saga-style distributed transaction coordination
 - [x] Scheduler locking (ShedLock)
 - [x] Retry handling
@@ -734,6 +755,10 @@ The migration is focused not only on splitting the application into multiple ser
 - [x] Card tokenization / vault flow
 - [x] Refund flow and refund processing
 - [x] Settlement processing
+- [x] Prometheus metrics
+- [x] Grafana dashboards
+- [x] Zipkin tracing
+- [x] Kubernetes manifests for local Kind deployment
 - [x] Webhook delivery
 - [x] Webhook retries
 - [x] Dead-letter processing
@@ -746,14 +771,9 @@ The migration is focused not only on splitting the application into multiple ser
 
 The following capabilities are planned for future iterations:
 
-- [ ] Distributed tracing
-- [ ] OpenTelemetry
-- [ ] Prometheus
-- [ ] Grafana
-- [ ] Centralized observability
-- [ ] Kubernetes deployment
-- [ ] Helm charts
-- [ ] Horizontal scaling
+- [ ] OpenTelemetry evolution
+- [ ] Helm charts for production-style packaging
+- [ ] Horizontal scaling automation
 - [ ] Load testing
 - [ ] Performance benchmarking
 - [ ] Broader automated testing
@@ -801,14 +821,19 @@ Microservices Architecture
        ├── Independent Services
        ├── Shared Infrastructure
        ├── Redis
-       └── Kafka
+       ├── Kafka
+       ├── Prometheus
+       ├── Grafana
+       ├── Zipkin
+       └── Kubernetes / Kind
        │
        ▼
-Next Stage
+Current State
        │
-       ├── Observability
-       ├── Kubernetes
-       └── Load Testing
+       ├── Local K8s deployment
+       ├── Observability stack
+       ├── Payment idempotency
+       └── Operational hardening
 ```
 
-The system is currently a working microservices foundation with additional distributed-system and operational capabilities being developed incrementally.
+The system is currently a working microservices foundation with observability, Kubernetes manifests, and local Kind deployment support already in place.
