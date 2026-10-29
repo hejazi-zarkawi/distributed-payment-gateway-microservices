@@ -12,27 +12,27 @@ data:
       - job_name: api-gateway-service
         metrics_path: /actuator/prometheus
         static_configs:
-          - targets: ["api-gateway:8080"]
+          - targets: ["api-gateway:80"]
 
       - job_name: merchant-service
         metrics_path: /actuator/prometheus
         static_configs:
-          - targets: ["merchant-service:9010"]
+          - targets: ["merchant-service:80"]
 
       - job_name: payment-service
         metrics_path: /actuator/prometheus
         static_configs:
-          - targets: ["payment-service:9020"]
+          - targets: ["payment-service:80"]
 
       - job_name: operations-service
         metrics_path: /actuator/prometheus
         static_configs:
-          - targets: ["operations-service:9030"]
+          - targets: ["operations-service:80"]
 
       - job_name: vault-service
         metrics_path: /actuator/prometheus
         static_configs:
-          - targets: ["vault-service:9040"]
+          - targets: ["vault-service:80"]
 
 ---
 apiVersion: apps/v1
