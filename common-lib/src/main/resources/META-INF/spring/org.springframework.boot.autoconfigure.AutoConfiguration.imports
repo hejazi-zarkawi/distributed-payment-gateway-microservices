@@ -4,3 +4,4 @@ com.hejazi.distributed_payment_gateway.common_lib.config.SharedKafkaAutoConfigur
 com.hejazi.distributed_payment_gateway.common_lib.util.SharedSecurityAutoConfiguration
 com.hejazi.distributed_payment_gateway.common_lib.exception.SharedExceptionAutoConfiguration
 com.hejazi.distributed_payment_gateway.common_lib.web.SharedWebFilterAutoConfiguration
+com.hejazi.distributed_payment_gateway.common_lib.openapi.SharedOpenApiAutoConfiguration

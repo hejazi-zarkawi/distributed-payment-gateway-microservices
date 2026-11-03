@@ -1,5 +1,7 @@
+
 spring:
   application:
     name: api-gateway-service
   config:
     import: configserver:${CONFIG_SERVER_URL:http://localhost:8888}
+
