@@ -157,7 +157,7 @@ Card payments involve secure card data handling through the dedicated Vault Serv
        alt="NexPay UPI Payment Flow"
        width="850">
   <br>
-  <em>Figure 7: UPI payment flow illustrating payment initiation, collect request registration, QR code or intent generation, customer authorization through a UPI application, bank-side debit and credit processing, asynchronous payment confirmation, and merchant settlement.</em>
+  <em>Figure 6: UPI payment flow illustrating payment initiation, collect request registration, QR code or intent generation, customer authorization through a UPI application, bank-side debit and credit processing, asynchronous payment confirmation, and merchant settlement.</em>
 </p>
 
 UPI payments are handled through a dedicated UPI payment strategy.
@@ -177,7 +177,7 @@ UPI payments are handled through a dedicated UPI payment strategy.
        alt="NexPay Net Banking Payment Flow"
        width="850">
   <br>
-  <em>Figure 6: Net Banking payment flow illustrating customer bank selection, redirection to the bank checkout page, customer authentication, payment authorization, asynchronous status notification, and merchant payment capture.</em>
+  <em>Figure 7: Net Banking payment flow illustrating customer bank selection, redirection to the bank checkout page, customer authentication, payment authorization, asynchronous status notification, and merchant payment capture.</em>
 </p>
 
 Net Banking payments are handled independently through their own payment strategy.
@@ -248,7 +248,7 @@ Every payment in NexPay follows a strict state machine that governs its lifecycl
 ### Securing Webhooks
 
 <p align="center">
-  <img src="diagrams/Webhooks.png"
+  <img src="diagrams/webhooks.png"
        alt="NexPay Webhook Signature Verification Flow"
        width="850">
   <br>
